@@ -158,6 +158,22 @@ public class Util
         return m.matches();
     }
 
+    public static boolean validNumeric (String number)
+    {
+        String regex = "\\d+";
+
+        Pattern p = Pattern.compile(regex);
+
+        if (number == null)
+        {
+            return false;
+        }
+
+        Matcher m = p.matcher(number);
+
+        return m.matches();
+    }
+
 
     public static String validateBody(JsonObject inputBody, String type)
     {

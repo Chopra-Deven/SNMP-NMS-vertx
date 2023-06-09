@@ -1,20 +1,18 @@
 package com.snmp.server.database;
 
-import com.snmp.server.util.DiscoveryUtil;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
-public class DiscoveryDB implements DatabaseServices
+public class DiscoveryDB implements DatabaseServices<JsonObject>
 {
 
     private static DiscoveryDB instance;
 
-    private static final HashMap<Integer, JsonObject> discoveryProfiles = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, JsonObject> discoveryProfiles = new ConcurrentHashMap<>();
 
     public static DiscoveryDB getInstance()
     {
@@ -27,27 +25,27 @@ public class DiscoveryDB implements DatabaseServices
     }
 
     @Override
-    public Object get(int id)
+    public JsonObject get(int id)
     {
         return discoveryProfiles.get(id).copy();
     }
 
     @Override
-    public List<Object> getAll()
+    public List<JsonObject> getAll()
     {
 
         return new ArrayList<>(discoveryProfiles.values());
     }
 
     @Override
-    public Object update(int id, Object obj)
+    public JsonObject update(int id, Object obj)
     {
 
         return discoveryProfiles.put(id, (JsonObject) obj);
     }
 
     @Override
-    public Object add(int id, Object obj)
+    public JsonObject add(int id, Object obj)
     {
         JsonObject inputData = (JsonObject) obj;
 
@@ -60,7 +58,7 @@ public class DiscoveryDB implements DatabaseServices
     }
 
     @Override
-    public Object delete(int id)
+    public JsonObject delete(int id)
     {
         return discoveryProfiles.remove(id);
     }

@@ -87,11 +87,19 @@ public class PollingHandler extends AbstractVerticle
             if (task.succeeded())
             {
 
-                JsonObject result = new JsonObject(task.result().toString());
+                JsonObject allData = new JsonObject(task.result().toString());
+
+                String metrics = allData.getString(METRICS);
+
+                String ip = allData.getString(IP);
+
+                //                System.out.println("\nResult : " + result.encodePrettily());
+
+                JsonObject result = allData.getJsonObject("result");
 
                 System.out.println("\nResult : " + result.encodePrettily());
 
-                writeDataToFile(result, vertx);
+                writeDataToFile(result, vertx, metrics, ip);
 
             }
 
@@ -104,15 +112,17 @@ public class PollingHandler extends AbstractVerticle
         });
     }
 
-    public static void writeDataToFile(JsonObject inputData, Vertx vertx){
+    public static void writeDataToFile(JsonObject inputData, Vertx vertx, String metrics, String ip)
+    {
 
         String fileName;
 
-        if (inputData.getString(METRICS).equals(SYSTEM_METRICS))
+        if (metrics.equals(SYSTEM_METRICS))
             fileName = "systemInfo.json";
-        else fileName = "interfaceInfo.json";
+        else
+            fileName = "interfaceInfo.json";
 
-        String directoryPath = "/home/deven/Intellij Projects/SNMP-NMS/src/main/java/com/snmp/server/PolledData/" + inputData.getString("ip");
+        String directoryPath = "/home/deven/Intellij Projects/SNMP-NMS/src/main/java/com/snmp/server/PolledData/" + ip;
         // JSON file path
         String filePath = directoryPath + "/" + fileName;
 

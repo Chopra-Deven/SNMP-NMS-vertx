@@ -23,7 +23,7 @@ public class DiscoveryHandler
 
     EventBus eventBus;
 
-    private static final DiscoveryUtil discoveryUtil = new DiscoveryUtil();
+//    private static final DiscoveryUtil discoveryUtil = new DiscoveryUtil();
 
     public DiscoveryHandler(Vertx vertx, EventBus eventBus)
     {
@@ -225,7 +225,7 @@ public class DiscoveryHandler
     public static JsonObject getSystemName(JsonObject inputData)
     {
 
-        inputData.put("type", "discovery");
+        inputData.put(TYPE, TYPE_DISCOVERY);
 
         List<String> command = new ArrayList<>();
 

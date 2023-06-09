@@ -3,17 +3,17 @@ package com.snmp.server.database;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 
-public class CredentialDB implements DatabaseServices
+public class CredentialDB implements DatabaseServices<JsonObject>
 {
 
     private static CredentialDB instance;
 
-    private static final HashMap<Integer, JsonObject> credentialProfiles = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, JsonObject> credentialProfiles = new ConcurrentHashMap<>();
 
     public static CredentialDB getInstance()
     {
@@ -26,26 +26,26 @@ public class CredentialDB implements DatabaseServices
     }
 
     @Override
-    public Object get(int id)
+    public JsonObject get(int id)
     {
         return credentialProfiles.get(id).copy();
     }
 
     @Override
-    public List<Object> getAll()
+    public List<JsonObject> getAll()
     {
         return new ArrayList<>(credentialProfiles.values());
     }
 
     @Override
-    public Object update(int id, Object obj)
+    public JsonObject update(int id, Object obj)
     {
 
-        return null;
+        return credentialProfiles.put(id, (JsonObject) obj);
     }
 
     @Override
-    public Object add(int id, Object obj)
+    public JsonObject add(int id, Object obj)
     {
 
         JsonObject inputData = (JsonObject) obj;
@@ -66,7 +66,7 @@ public class CredentialDB implements DatabaseServices
     }
 
     @Override
-    public Object delete(int id)
+    public JsonObject delete(int id)
     {
 
         return credentialProfiles.remove(id);

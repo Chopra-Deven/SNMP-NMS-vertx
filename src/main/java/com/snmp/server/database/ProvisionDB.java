@@ -7,12 +7,14 @@ import java.util.HashMap;
 import java.util.List;
 
 
-public class ProvisionDB implements DatabaseServices
+public class ProvisionDB implements DatabaseServices<JsonObject>
 {
 
     private static ProvisionDB instance;
 
     private static final HashMap<Integer, JsonObject> provisionProfiles = new HashMap<>();
+
+
 
     public static ProvisionDB getInstance()
     {
@@ -25,37 +27,38 @@ public class ProvisionDB implements DatabaseServices
     }
 
     @Override
-    public Object get(int id)
+    public JsonObject get(int id)
     {
 
         return null;
     }
 
     @Override
-    public List getAll()
+    public List<JsonObject> getAll()
     {
 
         return new ArrayList<>(provisionProfiles.values());
     }
 
     @Override
-    public Object update(int id, Object obj)
+    public JsonObject update(int id, Object obj)
     {
 
         return null;
     }
 
     @Override
-    public Object add(int id, Object obj)
+    public JsonObject add(int id, Object obj)
     {
         JsonObject inputData = (JsonObject) obj;
 
         System.out.println("Provision Added");
+
         return provisionProfiles.put(id, inputData);
     }
 
     @Override
-    public Object delete(int id)
+    public JsonObject delete(int id)
     {
 
         return null;
