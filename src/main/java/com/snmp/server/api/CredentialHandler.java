@@ -3,14 +3,14 @@ package com.snmp.server.api;
 import com.snmp.server.util.Constants;
 import com.snmp.server.util.CredentialUtil;
 import com.snmp.server.util.Util;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
+
+import java.util.Objects;
 
 import static com.snmp.server.util.Constants.*;
 
@@ -22,7 +22,7 @@ public class CredentialHandler
 
     EventBus eventBus;
 
-    private final CredentialUtil credentialUtil = new CredentialUtil();
+//    private final CredentialUtil credentialUtil = new CredentialUtil();
 
     public CredentialHandler(Vertx vertx, EventBus eventBus)
     {
@@ -43,11 +43,11 @@ public class CredentialHandler
 
             HttpServerResponse response = context.response();
 
-            response.putHeader("content-type", "application/json");
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
             JsonObject inputData = context.body().asJsonObject();
 
-            if (credentialUtil.isValidInput(inputData))
+            if (Objects.equals(Util.validateBody(inputData, CREDENTIAL_ADDRESS), ""))
             {
                 inputData.put(Constants.REQUEST_TYPE, Constants.CREDENTIAL_POST);
 
@@ -61,7 +61,8 @@ public class CredentialHandler
 
                             if (resultData.getString(Constants.STATUS).equals(Constants.STATUS_SUCCESS))
                             {
-                                response.end(Util.getSuccessResponse("Credential Profile Created.").encode());
+                                response.setStatusCode(200);
+                                response.end(Util.setSuccessResponse("Credential Profile Created.").encode());
                             }
                             else
                             {
@@ -70,17 +71,21 @@ public class CredentialHandler
                         }
                         else
                         {
-                            response.end(Util.getFailureResponse("Internal Server Error").encodePrettily());
+                            response.setStatusCode(500);
+                            response.end(Util.setFailureResponse("Internal Server Error").encodePrettily());
                         }
                     }
                     catch (Exception exception)
                     {
-                        System.out.println(exception.getMessage());
-                    }
+                        response.setStatusCode(500);
+                        response.end(Util.setFailureResponse("Internal Server Error : " + exception.getMessage()).encodePrettily());
+                     }
                 });
             }
             else
-                response.end( Util.getFailureResponse("Invalid Inputs").encodePrettily());
+            {   response.setStatusCode(400);
+                response.end(Util.setFailureResponse(Util.validateBody(inputData, CREDENTIAL_ADDRESS)).encodePrettily());
+            }
 
         });
 
@@ -90,11 +95,9 @@ public class CredentialHandler
 
             HttpServerResponse response = context.response();
 
-            response.putHeader("content-type", "application/json");
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
             eventBus.request(CREDENTIAL_ADDRESS, new JsonObject().put(REQUEST_TYPE, CREDENTIAL_GET_ALL)).onComplete(result -> {
-                System.out.println("Get request sent to eventbus");
-
                 try
                 {
                     if (result.succeeded())
@@ -107,25 +110,27 @@ public class CredentialHandler
                         }
                         else
                         {
-                            response.end(Util.getFailureResponse(resultData.getString(Constants.MESSAGE)).encodePrettily());
+                            response.setStatusCode(502);
+                            response.end(Util.setFailureResponse(resultData.getString(Constants.MESSAGE)).encodePrettily());
                         }
                     }
                     else
                     {
-                        response.end(Util.getFailureResponse("Internal Server Error").encodePrettily());
+                        response.setStatusCode(500);
+                        response.end(Util.setFailureResponse("Internal Server Error").encodePrettily());
                     }
                 }
                 catch (Exception exception)
                 {
-                    System.out.println(exception.getMessage());
+                    response.setStatusCode(500);
+                    response.end(Util.setFailureResponse("Internal Server Error : " + exception.getMessage()).encodePrettily());
                 }
 
             });
 
-
         });
 
-
+//        router.put("/:id").handler()
 
         return router;
     }

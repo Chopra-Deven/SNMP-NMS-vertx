@@ -3,18 +3,15 @@ package com.snmp.server.api;
 import com.snmp.server.util.Constants;
 import com.snmp.server.util.DiscoveryUtil;
 import com.snmp.server.util.Util;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.BodyHandler;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.snmp.server.util.Constants.*;
 
@@ -43,15 +40,15 @@ public class DiscoveryHandler
 
         Router router = Router.router(vertx);
 
-        router.post("/").consumes("application/json").handler(BodyHandler.create()).handler(context -> {
+        router.post("/").consumes(APPLICATION_JSON).handler(BodyHandler.create()).handler(context -> {
 
             HttpServerResponse response = context.response();
 
-            response.putHeader("content-type", "application/json");
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
             JsonObject inputData = context.body().asJsonObject();
 
-            if (discoveryUtil.isValidInput(inputData))
+            if (Util.validateBody(inputData, DISCOVER_ADDRESS).equals(""))
             {
                 inputData.put(REQUEST_TYPE, DISCOVERY_POST);
 
@@ -63,22 +60,27 @@ public class DiscoveryHandler
 
                         if (resultData.getString(STATUS).equals(STATUS_SUCCESS))
                         {
-                            response.end(Util.getSuccessResponse("Discovery Profile Created.").encodePrettily());
+                            response.setStatusCode(200);
+                            response.end(Util.setSuccessResponse("Discovery Profile Created.").encodePrettily());
                         }
                         else
                         {
+                            response.setStatusCode(502);
                             response.end(Util.getFailureResponse(resultData.getString(Constants.MESSAGE)).encodePrettily());
                         }
                     }
                     else
                     {
+                        response.setStatusCode(502);
                         response.end(Util.getFailureResponse("Internal Server Error").encodePrettily());
                     }
                 });
             }
             else
-                response.end(Util.getFailureResponse("Invalid Input").encodePrettily());
-
+            {
+                response.setStatusCode(400);
+                response.end(Util.getFailureResponse(Util.validateBody(inputData, DISCOVER_ADDRESS)).encodePrettily());
+            }
         });
 
         router.get("/").handler(BodyHandler.create()).handler(context -> {
@@ -87,7 +89,7 @@ public class DiscoveryHandler
 
             HttpServerResponse response = context.response();
 
-            response.putHeader("content-type", "application/json");
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
             eventBus.request(DISCOVER_ADDRESS, new JsonObject().put(REQUEST_TYPE, DISCOVERY_GET_ALL)).onComplete(result -> {
 
@@ -127,9 +129,9 @@ public class DiscoveryHandler
 
             HttpServerResponse response = context.response();
 
-            response.putHeader("content-type", "application/json");
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
-            eventBus.request(DISCOVER_ADDRESS, new JsonObject().put("discoveryId", id).put(REQUEST_TYPE, DISCOVERY_RUN), replyHandler -> {
+            eventBus.request(DISCOVER_ADDRESS, new JsonObject().put(DISCOVERY_ID_KEY, id).put(REQUEST_TYPE, DISCOVERY_RUN), replyHandler -> {
 
                 if (replyHandler.succeeded())
                 {
@@ -185,16 +187,63 @@ public class DiscoveryHandler
     private static JsonObject discovery(JsonObject discoveryProfile)
     {
 
-        if (discoveryUtil.ping(discoveryProfile.getString("ip")))
+        if (ping(discoveryProfile.getString("ip")))
         {
 
-            JsonObject response = discoveryUtil.getSystemName(discoveryProfile);
+            JsonObject response = getSystemName(discoveryProfile);
 
             return response.getJsonObject("result");
 
         }
 
         return Util.getFailureResponse("Device is not available or unreachable");
+    }
+
+    public static boolean ping(String ip)
+    {
+
+        List<String> command = new ArrayList<>();
+
+        command.add("fping");
+        command.add("-c");
+        command.add(NUMBER_OF_PACKETS);
+        command.add("-q");
+        command.add(ip);
+
+        JsonObject data = Util.executeProcess(command);
+
+        if (data.getString(STATUS).equals(STATUS_FAIL))
+
+            return false;
+
+        else
+
+            return Util.getPingStatus(data.getString("result"));
+
+    }
+
+    public static JsonObject getSystemName(JsonObject inputData)
+    {
+
+        inputData.put("type", "discovery");
+
+        List<String> command = new ArrayList<>();
+
+        command.add(PLUGIN_PATH);
+
+        command.add(inputData.toString());
+
+        JsonObject result = Util.executeProcess(command);
+
+        if (result.getString(STATUS).equals(STATUS_FAIL))
+        {
+            return result.put(STATUS, STATUS_FAIL);
+        }
+        else
+        {
+            return new JsonObject(result.getString("result"));
+        }
+
     }
 
 }

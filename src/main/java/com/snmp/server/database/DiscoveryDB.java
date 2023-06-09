@@ -29,8 +29,6 @@ public class DiscoveryDB implements DatabaseServices
     @Override
     public Object get(int id)
     {
-
-        System.out.println("\nReturn data of : " + id);
         return discoveryProfiles.get(id).copy();
     }
 

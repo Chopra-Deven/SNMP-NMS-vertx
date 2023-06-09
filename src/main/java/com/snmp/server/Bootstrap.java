@@ -2,6 +2,7 @@ package com.snmp.server;
 
 
 import com.snmp.server.api.MainRouter;
+import com.snmp.server.api.PollingHandler;
 import com.snmp.server.database.DatabaseHandler;
 import io.vertx.core.Vertx;
 
@@ -15,6 +16,7 @@ public class Bootstrap
 
         vertx.deployVerticle(new MainRouter());
         vertx.deployVerticle(new DatabaseHandler());
+        vertx.deployVerticle(new PollingHandler());
     }
 
 }

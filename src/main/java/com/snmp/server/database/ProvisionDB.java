@@ -2,6 +2,7 @@ package com.snmp.server.database;
 
 import io.vertx.core.json.JsonObject;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class ProvisionDB implements DatabaseServices
     public List getAll()
     {
 
-        return null;
+        return new ArrayList<>(provisionProfiles.values());
     }
 
     @Override

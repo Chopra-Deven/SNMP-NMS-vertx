@@ -28,7 +28,6 @@ public class CredentialDB implements DatabaseServices
     @Override
     public Object get(int id)
     {
-
         return credentialProfiles.get(id).copy();
     }
 

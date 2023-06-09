@@ -5,6 +5,7 @@ import com.snmp.server.util.Util;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -39,8 +40,6 @@ public class DatabaseHandler extends AbstractVerticle
                 {
 
                     case Constants.CREDENTIAL_POST:
-
-                        //                        System.out.println("inside switch");
 
                         vertx.executeBlocking(insertPromise -> {
 
@@ -253,13 +252,11 @@ public class DatabaseHandler extends AbstractVerticle
 
                     getVertx().executeBlocking(promise -> {
 
-                        JsonObject updatedDiscoveryProfile = inputData;
-
                         String[] keysToRemove = {REQUEST_TYPE, STATUS, "type"};
 
                         // Remove key-value pairs
                         for (String key : keysToRemove) {
-                            updatedDiscoveryProfile.remove(key);
+                            inputData.remove(key);
                         }
 
                         if (discoveryDB.update(inputData.getInteger("discoveryId"), inputData) != null)
@@ -318,10 +315,7 @@ public class DatabaseHandler extends AbstractVerticle
                                     discoveryProfile.remove(key);
                                 }
 
-                                System.out.println("\nProvision Profile -- : " + discoveryProfile.encodePrettily());
-
                                 if (provisionDB.add(PROVISION_ID++, discoveryProfile) == null){
-                                    System.out.println("Provision addedddd");
                                     promise.complete("Provision Success");
                                 }
                                 else {
@@ -345,6 +339,41 @@ public class DatabaseHandler extends AbstractVerticle
                             data.reply(Util.getFailureResponse(result.cause().getMessage()));
                         }
 
+
+                    });
+
+                    break;
+
+                case PROVISION_GET_ALL:
+
+                    vertx.executeBlocking(promise -> {
+
+                        JsonArray provisionProfile = new JsonArray(provisionDB.getAll());
+
+                        for (Object profile : provisionProfile){
+
+                            JsonObject provisionData = (JsonObject) profile;
+
+                            JsonObject credentialData = (JsonObject) credentialDB.get(provisionData.getInteger("credentialId"));
+
+                            provisionData.put("credentialName",credentialData.getString("credentialName")).put("community",credentialData.getString("community")).put("version",credentialData.getString("version"));
+                        }
+
+//                        System.out.println("\nProvision Data : " + provisionProfile);
+
+                        promise.complete(Util.getSuccessResponse("Data Retrieved").put("data", provisionProfile));
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                        {
+                            data.reply(result.result());
+                        }
+
+                        else
+                        {
+                            data.reply(Util.getFailureResponse(result.cause().getMessage()));
+                        }
 
                     });
             }

@@ -44,9 +44,9 @@ public class ProvisionHandler
                 int id = Integer.parseInt(context.pathParam("id"));
 
 
-                response.putHeader("content-type", "application/json");
+                response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
-                eventBus.request(PROVISION_ADDRESS, new JsonObject().put("discoveryId", id).put(REQUEST_TYPE, PROVISION_RUN), replyHandler -> {
+                eventBus.request(PROVISION_ADDRESS, new JsonObject().put(DISCOVERY_ID_KEY, id).put(REQUEST_TYPE, PROVISION_RUN), replyHandler -> {
 
                     JsonObject reply = (JsonObject) replyHandler.result().body();
 
