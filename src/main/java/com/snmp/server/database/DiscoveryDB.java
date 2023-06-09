@@ -38,23 +38,23 @@ public class DiscoveryDB implements DatabaseServices<JsonObject>
     }
 
     @Override
-    public JsonObject update(int id, Object obj)
+    public JsonObject update(int id, JsonObject obj)
     {
 
-        return discoveryProfiles.put(id, (JsonObject) obj);
+        System.out.println("Discovery Updated");
+        return discoveryProfiles.put(id,  obj);
     }
 
     @Override
-    public JsonObject add(int id, Object obj)
+    public JsonObject add(int id, JsonObject obj)
     {
-        JsonObject inputData = (JsonObject) obj;
 
-        if (isValueExist(inputData.getString("discoveryName"))){
-            return inputData;
+        if (isValueExist(obj.getString("discoveryName"))){
+            return obj;
         }
 
         System.out.println("Discovery Added");
-        return discoveryProfiles.put(id, inputData);
+        return discoveryProfiles.put(id, obj);
     }
 
     @Override

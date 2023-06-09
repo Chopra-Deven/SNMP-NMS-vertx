@@ -1,7 +1,6 @@
 package com.snmp.server.api;
 
 import com.snmp.server.util.Constants;
-import com.snmp.server.util.DiscoveryUtil;
 import com.snmp.server.util.Util;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.EventBus;
@@ -12,6 +11,7 @@ import io.vertx.ext.web.handler.BodyHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import static com.snmp.server.util.Constants.*;
 
@@ -35,8 +35,6 @@ public class DiscoveryHandler
 
     public Router initializeRouter()
     {
-
-        System.out.println("Discovery Init Called");
 
         Router router = Router.router(vertx);
 
@@ -66,7 +64,7 @@ public class DiscoveryHandler
                         else
                         {
                             response.setStatusCode(502);
-                            response.end(Util.getFailureResponse(resultData.getString(Constants.MESSAGE)).encodePrettily());
+                            response.end(Util.setFailureResponse(resultData.getString(Constants.MESSAGE)).encodePrettily());
                         }
                     }
                     else
@@ -158,7 +156,7 @@ public class DiscoveryHandler
 
                             updatedDiscoverProfile.put("isDiscovered", "true");
 
-                            eventBus.request(DISCOVER_ADDRESS, updatedDiscoverProfile.put(REQUEST_TYPE, DISCOVERY_PUT)).onComplete(task -> {
+                            eventBus.request(DISCOVER_ADDRESS, updatedDiscoverProfile.put(REQUEST_TYPE, DISCOVERY_UPDATE)).onComplete(task -> {
 
                                 if (asyncResult.succeeded())
                                 {
@@ -177,6 +175,131 @@ public class DiscoveryHandler
                     });
                 }
             });
+        });
+
+        router.put("/:id").handler(BodyHandler.create()).handler(context -> {
+
+            context.response().setChunked(true);
+
+            HttpServerResponse response = context.response();
+
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
+
+            int id = 0;
+
+            if (Util.validNumeric(context.pathParam("id")))
+            {
+                id = Integer.parseInt(context.pathParam("id"));
+            }
+            else
+            {
+                response.setStatusCode(400);
+                response.end(Util.setFailureResponse("Invalid Discovery Id").encodePrettily());
+            }
+
+            JsonObject inputData = context.body().asJsonObject();
+
+            String error = Util.validateBody(inputData, DISCOVER_ADDRESS);
+
+            if (error.equals(""))
+            {
+                inputData.put(REQUEST_TYPE, DISCOVERY_PUT).put(DISCOVERY_ID_KEY, id);
+
+                System.out.println("Befeore send update req id : " + id);
+
+                eventBus.<JsonObject>request(DISCOVER_ADDRESS, inputData, result -> {
+
+                    try
+                    {
+                        if (result.succeeded())
+                        {
+                            JsonObject resultData = result.result().body();
+
+                            if (resultData.getString(Constants.STATUS).equals(STATUS_SUCCESS))
+                            {
+                                response.setStatusCode(200);
+                                response.end(Util.setSuccessResponse(resultData.getString(MESSAGE)).encodePrettily());
+                            }
+                            else
+                            {
+                                response.setStatusCode(400);
+                                response.end(Util.setFailureResponse(resultData.getString(MESSAGE)).encodePrettily());
+                            }
+                        }
+                        else
+                        {
+                            response.setStatusCode(500);
+                            response.end(Util.setFailureResponse("Internal Server Error").encodePrettily());
+                        }
+                    }
+                    catch (Exception exception)
+                    {
+                        response.setStatusCode(500);
+                        response.end(Util.setFailureResponse("Internal Server Error : " + exception.getMessage()).encodePrettily());
+                    }
+                });
+
+            }
+            else
+            {
+                response.setStatusCode(400);
+                response.end(Util.setFailureResponse(error).encodePrettily());
+            }
+
+        });
+
+        router.get("/:id").handler(context -> {
+
+            context.response().setChunked(true);
+
+            HttpServerResponse response = context.response();
+
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
+
+            int id = 0;
+
+            if (Util.validNumeric(context.pathParam("id")))
+            {
+                id = Integer.parseInt(context.pathParam("id"));
+            }
+            else
+            {
+                response.setStatusCode(400);
+                response.end(Util.setFailureResponse("Invalid Credential Id").encodePrettily());
+            }
+
+            eventBus.<JsonObject>request(DISCOVER_ADDRESS, new JsonObject().put(DISCOVERY_ID_KEY, id).put(REQUEST_TYPE, DISCOVERY_GET), result -> {
+
+                try
+                {
+                    if (result.succeeded())
+                    {
+                        JsonObject resultData = result.result().body();
+
+                        if (resultData.getString(Constants.STATUS).equals(Constants.STATUS_SUCCESS))
+                        {
+                            response.setStatusCode(200);
+                            response.end(resultData.encodePrettily());
+                        }
+                        else
+                        {
+                            response.setStatusCode(400);
+                            response.end(Util.getFailureResponse(resultData.getString(MESSAGE)).encodePrettily());
+                        }
+                    }
+                    else
+                    {
+                        response.setStatusCode(500);
+                        response.end(Util.setFailureResponse("Internal Server Error").encodePrettily());
+                    }
+                }
+                catch (Exception exception)
+                {
+                    response.setStatusCode(500);
+                    response.end(Util.setFailureResponse("Internal Server Error : " + exception.getMessage()).encodePrettily());
+                }
+            });
+
         });
 
 

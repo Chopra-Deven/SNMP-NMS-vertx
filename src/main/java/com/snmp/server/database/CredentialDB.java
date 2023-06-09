@@ -38,31 +38,29 @@ public class CredentialDB implements DatabaseServices<JsonObject>
     }
 
     @Override
-    public JsonObject update(int id, Object obj)
+    public JsonObject update(int id, JsonObject obj)
     {
 
-        return credentialProfiles.put(id, (JsonObject) obj);
+        return credentialProfiles.put(id, obj);
     }
 
     @Override
-    public JsonObject add(int id, Object obj)
+    public JsonObject add(int id, JsonObject obj)
     {
-
-        JsonObject inputData = (JsonObject) obj;
 
         for (Map.Entry<Integer, JsonObject> entry : credentialProfiles.entrySet())
         {
 
-            if (entry.getValue().getString("credentialName").equalsIgnoreCase(inputData.getString("credentialName")))
+            if (entry.getValue().getString("credentialName").equalsIgnoreCase(obj.getString("credentialName")))
             {
 
-                return inputData;
+                return obj;
             }
         }
 
         System.out.println("Credential Data Added");
 
-        return credentialProfiles.put(id, inputData);
+        return credentialProfiles.put(id, obj);
     }
 
     @Override

@@ -10,9 +10,9 @@ public interface DatabaseServices<T>
 
     List<T> getAll();
 
-    T update(int id, Object obj);
+    T update(int id, T obj);
 
-    T add(int id, Object obj);
+    T add(int id, T obj);
 
     T delete (int id);
 

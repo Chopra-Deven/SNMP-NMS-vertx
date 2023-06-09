@@ -34,6 +34,8 @@ public class CredentialHandler
     public Router initializeRouter()
     {
 
+        System.out.println("Credential deployed");
+
         Router router = Router.router(vertx);
 
         router.post("/").handler(BodyHandler.create()).handler(context -> {
@@ -46,7 +48,9 @@ public class CredentialHandler
 
             JsonObject inputData = context.body().asJsonObject();
 
-            if (Objects.equals(Util.validateBody(inputData, CREDENTIAL_ADDRESS), ""))
+            String error = Util.validateBody(inputData, CREDENTIAL_ADDRESS);
+
+            if (error.equals(""))
             {
                 inputData.put(Constants.REQUEST_TYPE, Constants.CREDENTIAL_POST);
 
@@ -84,12 +88,11 @@ public class CredentialHandler
             else
             {
                 response.setStatusCode(400);
-                response.end(Util.setFailureResponse(Util.validateBody(inputData, CREDENTIAL_ADDRESS)).encodePrettily());
+                response.end(Util.setFailureResponse(error).encodePrettily());
             }
 
         });
 
-        // handler(BodyHandler.create())
         router.get("/").handler(context -> {
 
             context.response().setChunked(true);
@@ -153,7 +156,9 @@ public class CredentialHandler
 
             JsonObject inputData = context.body().asJsonObject();
 
-            if (Objects.equals(Util.validateBody(inputData, CREDENTIAL_ADDRESS), ""))
+            String error = Util.validateBody(inputData, CREDENTIAL_ADDRESS);
+
+            if (error.equals(""))
             {
 
                 inputData.put(Constants.REQUEST_TYPE, CREDENTIAL_PUT).put(CREDENTIAL_ID_KEY, id);

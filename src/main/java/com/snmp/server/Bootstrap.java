@@ -14,9 +14,30 @@ public class Bootstrap
     {
         Vertx vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new MainRouter());
-        vertx.deployVerticle(new DatabaseHandler());
-        vertx.deployVerticle(new PollingHandler());
+        vertx.deployVerticle(new MainRouter()).onComplete(handler -> {
+
+            if (handler.succeeded()){
+                System.out.println("Main vertical deployed");
+            }
+            else
+                System.out.println(handler.cause().getMessage());
+        });
+        vertx.deployVerticle(new DatabaseHandler()).onComplete(handler -> {
+
+            if (handler.succeeded()){
+                System.out.println("Database handler deployed");
+            }
+            else
+                System.out.println(handler.cause().getMessage());
+        });
+        vertx.deployVerticle(new PollingHandler()).onComplete(handler -> {
+
+            if (handler.succeeded()){
+                System.out.println("Polling handler deployed");
+            }
+            else
+                System.out.println(handler.cause().getMessage());
+        });
     }
 
 }

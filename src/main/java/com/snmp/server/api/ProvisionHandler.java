@@ -59,6 +59,61 @@ public class ProvisionHandler
             }
         });
 
+        router.delete("/:id").handler(context -> {
+
+            context.response().setChunked(true);
+
+            HttpServerResponse response = context.response();
+
+            response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
+
+            int id = 0;
+
+            if (Util.validNumeric(context.pathParam("id")))
+            {
+                id = Integer.parseInt(context.pathParam("id"));
+            }
+            else
+            {
+                response.setStatusCode(400);
+                response.end(Util.setFailureResponse("Invalid Credential Id").encodePrettily());
+            }
+
+            eventBus.<JsonObject>request(CREDENTIAL_ADDRESS, new JsonObject().put(PROVISION_ID_KEY, id).put(REQUEST_TYPE, PROVISION_DELETE), result -> {
+
+                try
+                {
+                    if (result.succeeded())
+                    {
+                        JsonObject resultData = result.result().body();
+
+                        if (resultData.getString(Constants.STATUS).equals(Constants.STATUS_SUCCESS))
+                        {
+                            response.setStatusCode(200);
+                            response.end(Util.setSuccessResponse(resultData.getString(MESSAGE)).encodePrettily());
+                        }
+                        else
+                        {
+                            response.setStatusCode(400);
+                            response.end(Util.getFailureResponse(resultData.getString(MESSAGE)).encodePrettily());
+                        }
+                    }
+                    else
+                    {
+                        response.setStatusCode(500);
+                        response.end(Util.setFailureResponse("Internal Server Error : " + result.cause()).encodePrettily());
+                    }
+                }
+                catch (Exception exception)
+                {
+                    response.setStatusCode(500);
+                    response.end(Util.setFailureResponse("Internal Server Error : " + exception.getMessage()).encodePrettily());
+                }
+            });
+
+
+        });
+
         return router;
     }
 }

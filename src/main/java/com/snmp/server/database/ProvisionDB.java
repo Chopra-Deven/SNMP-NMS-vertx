@@ -41,27 +41,25 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
     }
 
     @Override
-    public JsonObject update(int id, Object obj)
+    public JsonObject update(int id, JsonObject obj)
     {
 
         return null;
     }
 
     @Override
-    public JsonObject add(int id, Object obj)
+    public JsonObject add(int id, JsonObject obj)
     {
-        JsonObject inputData = (JsonObject) obj;
 
         System.out.println("Provision Added");
 
-        return provisionProfiles.put(id, inputData);
+        return provisionProfiles.put(id, obj);
     }
 
     @Override
     public JsonObject delete(int id)
     {
-
-        return null;
+        return provisionProfiles.remove(id);
     }
 
     @Override

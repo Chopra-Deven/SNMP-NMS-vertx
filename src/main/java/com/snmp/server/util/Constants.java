@@ -31,6 +31,8 @@ public class Constants
 
     public static final String DISCOVERY_GET = "get";
 
+    public static final String DISCOVERY_UPDATE = "update";
+
     public static final String DISCOVERY_PUT = "put";
 
     public static final String DISCOVERY_DELETE = "delete";
@@ -105,9 +107,6 @@ public class Constants
 
     public static final String APPLICATION_JSON = "application/json";
 
-//    public static final String USED_AT = "usedAt";
-
-
-
+    public static final String PROVISION_DELETE = "delete";
 
 }

@@ -342,14 +342,87 @@ public class DatabaseHandler extends AbstractVerticle
 
                 case DISCOVERY_GET:
 
+                    int discoveryId = inputData.getInteger(DISCOVERY_ID_KEY);
+
                     getVertx().executeBlocking(promise -> {
 
+                        JsonObject discoveryProfile = discoveryDB.get(discoveryId);
 
-                    }, false);
+                        if (discoveryProfile != null)
+                        {
+                            promise.complete(discoveryProfile);
+                        }
+                        else
+                        {
+                            promise.fail("Discovery Id doesn't exist");
+                        }
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                            data.reply(Util.setSuccessResponse("Data Retrieved").put("data",result.result()));
+
+                        else
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
+                    });
 
                     break;
 
                 case DISCOVERY_PUT:
+
+                    discoveryId = inputData.getInteger(DISCOVERY_ID_KEY);
+
+                    getVertx().executeBlocking(promise -> {
+
+                        inputData.remove(REQUEST_TYPE);
+
+                        JsonObject oldDiscoveryProfile = discoveryDB.get(discoveryId);
+
+                        if (oldDiscoveryProfile != null)
+                        {
+                            if (credentialDB.isKeyExist(inputData.getInteger(CREDENTIAL_ID_KEY)))
+                            {
+                                if (oldDiscoveryProfile.getString(DISCOVERY_NAME).equals(inputData.getString(DISCOVERY_NAME)))
+                                {
+                                    oldDiscoveryProfile.put(IP, inputData.getString(IP)).put(PORT, inputData.getString(PORT)).put(CREDENTIAL_ID_KEY, inputData.getInteger(CREDENTIAL_ID_KEY)).put(IS_DISCOVERED, "false");
+
+                                    if (discoveryDB.update(discoveryId, oldDiscoveryProfile) != null)
+                                    {
+                                        System.out.println("\nready for update");
+                                        promise.complete(Util.setSuccessResponse("discovery Profile updated successfully"));
+                                    }
+                                    else
+                                    {
+                                        promise.fail("Failed to update discovery Profile");
+                                    }
+                                }
+                                else
+                                {
+                                    promise.fail("You can't change the discovery Name");
+                                }
+                            }else {
+                                promise.fail("Credential Id doesn't exist");
+                            }
+                        }
+                        else
+                        {
+                            promise.fail("Discovery Id doesn't exist");
+                        }
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                        {
+                            data.reply(result.result());
+                        }
+                        else
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
+
+                    });
+
+                    break;
+
+                case DISCOVERY_UPDATE:
 
                     getVertx().executeBlocking(promise -> {
 
@@ -383,6 +456,27 @@ public class DatabaseHandler extends AbstractVerticle
                     break;
 
                 case DISCOVERY_DELETE:
+
+                    discoveryId = inputData.getInteger(DISCOVERY_ID_KEY);
+
+                    getVertx().executeBlocking(promise -> {
+
+                        if (discoveryDB.delete(discoveryId) != null){
+                            promise.complete(Util.setSuccessResponse("Discovery profile deleted successfully"));
+                        }
+                        else
+                            promise.fail("Discovery Profile not deleted");
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                        {
+                            data.reply(result.result());
+                        }
+                        else
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
+
+                    });
 
                     break;
 
@@ -485,6 +579,30 @@ public class DatabaseHandler extends AbstractVerticle
                         }
 
                     });
+
+                case PROVISION_DELETE:
+
+                    int provisionId = inputData.getInteger(PROVISION_ID_KEY);
+
+                    getVertx().executeBlocking(promise -> {
+
+                        if (provisionDB.delete(provisionId) != null){
+                            promise.complete(Util.setSuccessResponse("Provision profile deleted successfully"));
+                        }
+                        else
+                            promise.fail("Provision Profile not deleted");
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                        {
+                            data.reply(result.result());
+                        }
+                        else
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
+
+                    });
+
             }
 
         });

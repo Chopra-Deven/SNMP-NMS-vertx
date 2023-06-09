@@ -228,7 +228,6 @@ public class Util
 
         else
         {
-            System.out.println("Validation called");
             if (inputBody.size() != 4)
             {
                 System.out.println("here");
