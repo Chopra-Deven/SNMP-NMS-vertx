@@ -278,7 +278,7 @@ public class DiscoveryHandler
 
                 response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
-                int id = 0;
+                int id;
 
                 if (Util.validNumeric(context.pathParam("id")))
                 {
@@ -291,8 +291,6 @@ public class DiscoveryHandler
                     if (error.equals(""))
                     {
                         inputData.put(REQUEST_TYPE, DISCOVERY_PUT).put(DISCOVERY_ID_KEY, id);
-
-                        System.out.println("Befeore send update req id : " + id);
 
                         eventBus.<JsonObject>request(DISCOVER_ADDRESS, inputData, result -> {
 
@@ -436,7 +434,7 @@ public class DiscoveryHandler
 
             response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
-            int id = 0;
+            int id;
 
             if (Util.validNumeric(context.pathParam("id")))
             {

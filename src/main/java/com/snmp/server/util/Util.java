@@ -101,9 +101,9 @@ public class Util
         try
         {
 
-            String[] splitedOutput = output.split("\\s+");
+            String[] splitOutput = output.split("\\s+");
 
-            String[] packetInfo = splitedOutput[4].split("/");
+            String[] packetInfo = splitOutput[4].split("/");
 
             int sentPackets = Integer.parseInt(packetInfo[0]);
 
@@ -305,19 +305,6 @@ public class Util
         {
             return result;
         }
-    }
-
-    public static boolean findKey(List<JsonObject> list, String key, int value)
-    {
-
-        for (JsonObject profile : list)
-        {
-            if (profile.getInteger(key) == value)
-            {
-                return true;
-            }
-        }
-        return false;
     }
 
 }

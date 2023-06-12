@@ -82,10 +82,4 @@ public class DiscoveryDB implements DatabaseServices<JsonObject>
         return discoveryProfiles.values().stream().anyMatch(profile -> profile.getString(key).equalsIgnoreCase(value));
     }
 
-   /* public boolean isValueExist(String name)
-    {
-
-        return discoveryProfiles.values().stream().anyMatch(value -> value.getString("discoveryName").equalsIgnoreCase(name));
-    }*/
-
 }

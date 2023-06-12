@@ -176,7 +176,7 @@ public class CredentialHandler
 
             response.putHeader(CONTENT_TYPE, APPLICATION_JSON);
 
-            int id = 0;
+            int id;
 
             if (Util.validNumeric(context.pathParam("id")))
             {

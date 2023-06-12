@@ -79,13 +79,6 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
         return provisionProfiles.values().stream().anyMatch(profile -> profile.getString(key).equalsIgnoreCase(value));
     }
 
-    /*@Override
-    public boolean isValueExist(String name)
-    {
-
-        return provisionProfiles.values().stream().anyMatch(value -> value.getString("discoveryName").equalsIgnoreCase(name));
-    }*/
-
 
 
 }

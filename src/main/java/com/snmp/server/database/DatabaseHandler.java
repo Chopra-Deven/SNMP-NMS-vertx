@@ -24,7 +24,7 @@ public class DatabaseHandler extends AbstractVerticle
 
 
     @Override
-    public void start(Promise<Void> startPromise) throws Exception
+    public void start(Promise<Void> startPromise)
     {
 
         EventBus eventbus = vertx.eventBus();
@@ -179,13 +179,8 @@ public class DatabaseHandler extends AbstractVerticle
 
                         getVertx().executeBlocking(promise -> {
 
-                            List<JsonObject> discoveryProfiles = discoveryDB.getAll();
-
-                            List<JsonObject> provisionProfiles = provisionDB.getAll();
-
-                            if (!Util.findKey(discoveryProfiles, CREDENTIAL_ID_KEY, credentialId) && !Util.findKey(provisionProfiles, CREDENTIAL_ID_KEY, credentialId))
+                            if (!provisionDB.containsKeyValue(CREDENTIAL_ID_KEY, Integer.toString(credentialId)) && !discoveryDB.containsKeyValue(CREDENTIAL_ID_KEY, Integer.toString(credentialId)))
                             {
-
                                 if (credentialDB.delete(credentialId) != null)
                                 {
                                     promise.complete(Util.setSuccessResponse("Credential Profile deleted successfully"));
@@ -492,19 +487,18 @@ public class DatabaseHandler extends AbstractVerticle
 
                     vertx.executeBlocking(promise -> {
 
-                        int id = inputData.getInteger(DISCOVERY_ID_KEY);
+                        int discoveryId = inputData.getInteger(DISCOVERY_ID_KEY);
 
                         //                        System.out.println("\nId for provision : " + inputData.getInteger(DISCOVERY_ID_KEY));
 
-                        JsonObject discoveryProfile = discoveryDB.get(id);
+                        JsonObject discoveryProfile = discoveryDB.get(discoveryId);
 
                         List<JsonObject> provisionProfiles = provisionDB.getAll();
 
-                        //TODO don't allow to run provision again
 
                         if (discoveryProfile != null)
                         {
-                            if (!Util.findKey(provisionProfiles, DISCOVERY_ID_KEY, id) && !provisionDB.containsKeyValue(IP, discoveryProfile.getString(IP)))
+                            if (!provisionDB.containsKeyValue(DISCOVERY_ID_KEY, Integer.toString(discoveryId)) && !provisionDB.containsKeyValue(IP, discoveryProfile.getString(IP)))
                             {
 
                                 if (discoveryProfile.getString(IS_DISCOVERED) != null && discoveryProfile.getString(IS_DISCOVERED).equals(TRUE))
