@@ -16,8 +16,10 @@ public interface DatabaseServices<T>
 
     T delete (int id);
 
-    boolean isKeyExist(int id);
+    boolean containsKey(int id);
 
-    boolean isValueExist(String name);
+//    boolean isValueExist(String name);
+
+    boolean containsKeyValue(String key, String value);
 
 }

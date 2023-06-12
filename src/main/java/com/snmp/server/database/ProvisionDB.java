@@ -14,8 +14,6 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
 
     private static final HashMap<Integer, JsonObject> provisionProfiles = new HashMap<>();
 
-
-
     public static ProvisionDB getInstance()
     {
 
@@ -29,6 +27,10 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
     @Override
     public JsonObject get(int id)
     {
+
+        if (provisionProfiles.get(id) != null){
+            return provisionProfiles.get(id).copy();
+        }
 
         return null;
     }
@@ -44,7 +46,7 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
     public JsonObject update(int id, JsonObject obj)
     {
 
-        return null;
+        return provisionProfiles.put(id, obj);
     }
 
     @Override
@@ -59,21 +61,31 @@ public class ProvisionDB implements DatabaseServices<JsonObject>
     @Override
     public JsonObject delete(int id)
     {
+
         return provisionProfiles.remove(id);
     }
 
     @Override
-    public boolean isKeyExist(int id)
+    public boolean containsKey(int id)
     {
 
-        return false;
+        return provisionProfiles.containsKey(id);
     }
 
     @Override
+    public boolean containsKeyValue(String key, String value)
+    {
+
+        return provisionProfiles.values().stream().anyMatch(profile -> profile.getString(key).equalsIgnoreCase(value));
+    }
+
+    /*@Override
     public boolean isValueExist(String name)
     {
 
-        return false;
-    }
+        return provisionProfiles.values().stream().anyMatch(value -> value.getString("discoveryName").equalsIgnoreCase(name));
+    }*/
+
+
 
 }

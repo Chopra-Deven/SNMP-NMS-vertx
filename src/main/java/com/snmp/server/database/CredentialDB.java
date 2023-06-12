@@ -4,8 +4,9 @@ import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.snmp.server.util.Constants.*;
 
 
 public class CredentialDB implements DatabaseServices<JsonObject>
@@ -28,12 +29,24 @@ public class CredentialDB implements DatabaseServices<JsonObject>
     @Override
     public JsonObject get(int id)
     {
-        return credentialProfiles.get(id).copy();
+
+        if (credentialProfiles.get(id) != null)
+        {
+
+            return credentialProfiles.get(id).copy();
+        }
+        else
+        {
+            return null;
+        }
+
+
     }
 
     @Override
     public List<JsonObject> getAll()
     {
+
         return new ArrayList<>(credentialProfiles.values());
     }
 
@@ -48,14 +61,9 @@ public class CredentialDB implements DatabaseServices<JsonObject>
     public JsonObject add(int id, JsonObject obj)
     {
 
-        for (Map.Entry<Integer, JsonObject> entry : credentialProfiles.entrySet())
+        if (containsKeyValue(CREDENTIAL_NAME,obj.getString(CREDENTIAL_NAME)))
         {
-
-            if (entry.getValue().getString("credentialName").equalsIgnoreCase(obj.getString("credentialName")))
-            {
-
-                return obj;
-            }
+            return obj;
         }
 
         System.out.println("Credential Data Added");
@@ -71,17 +79,18 @@ public class CredentialDB implements DatabaseServices<JsonObject>
     }
 
     @Override
-    public boolean isKeyExist(int id)
+    public boolean containsKey(int id)
     {
 
         return credentialProfiles.containsKey(id);
     }
 
-
-    public boolean isValueExist(String name)
+    @Override
+    public boolean containsKeyValue(String key, String value)
     {
 
-        return credentialProfiles.values().stream().anyMatch(value -> value.getString("discoveryName").equalsIgnoreCase(name));
+        return credentialProfiles.values().stream().anyMatch(profile -> profile.getString(key).equalsIgnoreCase(value));
     }
+
 
 }

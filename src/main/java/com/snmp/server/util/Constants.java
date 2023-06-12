@@ -109,4 +109,17 @@ public class Constants
 
     public static final String PROVISION_DELETE = "delete";
 
+    public static final String PROVISION_GET = "get";
+
+    public static final String DATA_STORE = "/home/deven/Intellij Projects/SNMP-NMS/src/main/java/com/snmp/server/PolledData/";
+
+    public static final String TRUE = "true";
+
+    public static final String FALSE = "false";
+
+    public static final String DATA = "data";
+
+    public static final String RESULT = "result";
+
+
 }

@@ -3,9 +3,9 @@ package com.snmp.server.util;
 import io.vertx.core.json.JsonObject;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -16,21 +16,6 @@ import static com.snmp.server.util.Constants.*;
 
 public class Util
 {
-
-
-    public static JsonObject getSuccessResponse(String msg)
-    {
-
-        return new JsonObject().put(Constants.STATUS_CODE, Constants.STATUS_CODE_200).put(STATUS, Constants.STATUS_SUCCESS).put(Constants.MESSAGE, msg);
-
-    }
-
-    public static JsonObject getFailureResponse(String msg)
-    {
-
-        return new JsonObject().put(Constants.STATUS_CODE, Constants.STATUS_CODE_400).put(STATUS, Constants.STATUS_FAIL).put(Constants.MESSAGE, msg);
-
-    }
 
     public static JsonObject setSuccessResponse(String msg)
     {
@@ -45,7 +30,6 @@ public class Util
         return new JsonObject().put(STATUS, Constants.STATUS_FAIL).put(Constants.MESSAGE, msg);
 
     }
-
 
     public static JsonObject executeProcess(List<String> command)
     {
@@ -142,7 +126,7 @@ public class Util
     public static boolean isValidIp(String ip)
     {
 
-        String zeroTo255 = "(\\d{1,2}|(0|1)\\" + "d{2}|2[0-4]\\d|25[0-5])";
+        String zeroTo255 = "(\\d{1,2}|([01])\\" + "d{2}|2[0-4]\\d|25[0-5])";
 
         String regex = zeroTo255 + "\\." + zeroTo255 + "\\." + zeroTo255 + "\\." + zeroTo255;
 
@@ -162,18 +146,17 @@ public class Util
     {
         String regex = "\\d+";
 
-        Pattern p = Pattern.compile(regex);
+        Pattern pattern = Pattern.compile(regex);
 
         if (number == null)
         {
             return false;
         }
 
-        Matcher m = p.matcher(number);
+        Matcher m = pattern.matcher(number);
 
         return m.matches();
     }
-
 
     public static String validateBody(JsonObject inputBody, String type)
     {
@@ -189,33 +172,27 @@ public class Util
             }
             if (inputBody.getString(COMMUNITY) != null)
             {
-                if (inputBody.getString(COMMUNITY).equals("public") || inputBody.getString(COMMUNITY).equals("private"))
-                {
-                }
-                else
+                if (!inputBody.getString(COMMUNITY).equals("public") && !inputBody.getString(COMMUNITY).equals("private"))
                 {
                     error += " Please enter valid community type. ";
                 }
-
             }
             else
                 return "Please enter community type.";
 
             if (inputBody.getString(VERSION) != null)
             {
-                if (inputBody.getString(VERSION).equals("v1") || inputBody.getString(VERSION).equals("v2c"))
+                if (!inputBody.getString(VERSION).equals("v1") && !inputBody.getString(VERSION).equals("v2c"))
                 {
-
-                }
-                else
                     error += " Invalid version.";
+                }
             }
             else
                 error += " Please enter version.";
 
             if (inputBody.getString(CREDENTIAL_NAME) != null)
             {
-                if (inputBody.getString(CREDENTIAL_NAME).equals(""))
+                if (inputBody.getString(CREDENTIAL_NAME).trim().equals(""))
                 {
                     error += " Please enter valid credential Name.";
                 }
@@ -254,7 +231,7 @@ public class Util
 
             if (inputBody.getString(DISCOVERY_NAME) != null)
             {
-                if (inputBody.getString(DISCOVERY_NAME).equals(""))
+                if (inputBody.getString(DISCOVERY_NAME).trim().equals(""))
                 {
                     error += " Please enter valid discovery Name.";
                 }
@@ -280,6 +257,67 @@ public class Util
         }
 
         return error;
+    }
+
+    public static boolean ping(String ip)
+    {
+
+        List<String> command = new ArrayList<>();
+
+        command.add("fping");
+        command.add("-c");
+        command.add(NUMBER_OF_PACKETS);
+        command.add("-q");
+        command.add(ip);
+
+        JsonObject data = Util.executeProcess(command);
+
+        if (data.getString(STATUS).equals(STATUS_FAIL))
+
+            return false;
+
+        else
+
+            return Util.getPingStatus(data.getString("result"));
+
+    }
+
+    public static JsonObject getSystemName(JsonObject inputData)
+    {
+
+        inputData.put(TYPE, TYPE_DISCOVERY);
+
+        List<String> command = new ArrayList<>();
+
+        command.add(PLUGIN_PATH);
+
+        command.add(inputData.toString());
+
+        JsonObject processData = Util.executeProcess(command);
+
+        JsonObject result = new JsonObject(processData.getString("result"));
+
+        if (result.getString(STATUS).equals(STATUS_FAIL))
+        {
+            return result.put(STATUS, STATUS_FAIL);
+        }
+        else
+        {
+            return result;
+        }
+    }
+
+    public static boolean findKey(List<JsonObject> list, String key, int value)
+    {
+
+        for (JsonObject profile : list)
+        {
+            if (profile.getInteger(key) == value)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

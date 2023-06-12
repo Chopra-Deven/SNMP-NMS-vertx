@@ -1,4 +1,4 @@
-package com.snmp.server.api;
+package com.snmp.server.polling;
 
 import com.snmp.server.util.Util;
 import io.vertx.core.AbstractVerticle;
@@ -8,7 +8,6 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.file.AsyncFile;
 import io.vertx.core.file.OpenOptions;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
@@ -33,7 +32,7 @@ public class PollingHandler extends AbstractVerticle
 
                 if (result.succeeded())
                 {
-                    JsonArray provisionProfiles = result.result().body().getJsonArray("data");
+                    JsonArray provisionProfiles = result.result().body().getJsonArray(DATA);
 
                     for (Object profile : provisionProfiles)
                     {
@@ -56,6 +55,8 @@ public class PollingHandler extends AbstractVerticle
 
         }); //  end of setPeriodic
 
+        startPromise.complete();
+
     }
 
     public static void poll(JsonObject profileData, Vertx vertx)
@@ -77,9 +78,7 @@ public class PollingHandler extends AbstractVerticle
             }
             else
             {
-                System.out.println("\nResult : " + new JsonObject(processResult.getString("result")).encodePrettily());
-
-                promise.complete(new JsonObject(processResult.getString("result")));
+                promise.complete(new JsonObject(processResult.getString(RESULT)));
             }
 
         }, false, task -> {
@@ -93,26 +92,30 @@ public class PollingHandler extends AbstractVerticle
 
                 String ip = allData.getString(IP);
 
-                //                System.out.println("\nResult : " + result.encodePrettily());
+                JsonObject result = allData.getJsonObject(RESULT);
 
-                JsonObject result = allData.getJsonObject("result");
+                if (result.getString(STATUS).equals(STATUS_SUCCESS))
+                {
 
-                System.out.println("\nResult : " + result.encodePrettily());
-
-                writeDataToFile(result, vertx, metrics, ip);
+                    writeDataToFile(new JsonObject(result.getJsonObject(DATA).encodePrettily()), vertx, metrics, ip);
+                }
+                else
+                {
+                    System.out.println("\nError in polling : " + result.getString(MESSAGE));
+                }
 
             }
 
             else
             {
-                System.out.println("\nError : " + task.cause());
+                System.out.println("\nError in process result : " + task.cause().getMessage());
             }
 
 
         });
     }
 
-    public static void writeDataToFile(JsonObject inputData, Vertx vertx, String metrics, String ip)
+    public static void writeDataToFile(JsonObject inputData, Vertx vertx, String metrics, String directoryName)
     {
 
         String fileName;
@@ -122,17 +125,14 @@ public class PollingHandler extends AbstractVerticle
         else
             fileName = "interfaceInfo.json";
 
-        String directoryPath = "/home/deven/Intellij Projects/SNMP-NMS/src/main/java/com/snmp/server/PolledData/" + ip;
-        // JSON file path
+        String directoryPath = DATA_STORE + directoryName;
+
         String filePath = directoryPath + "/" + fileName;
 
         vertx.fileSystem().mkdirs(directoryPath, result -> {
             if (result.succeeded())
             {
-                // Directory created or already exists
-                System.out.println("Directory created: " + directoryPath);
 
-                // Check if the JSON file exists or not
                 checkOrCreateJsonFile(filePath, vertx, inputData);
             }
             else
@@ -152,9 +152,7 @@ public class PollingHandler extends AbstractVerticle
             {
                 if (existsResult.result())
                 {
-                    // JSON file already exists
-                    System.out.println("JSON file already exists: " + filePath);
-                    // Now you can insert JsonObjects at runtime
+
                     insertJsonObject(filePath, vertx, inputData);
                 }
                 else
@@ -187,8 +185,6 @@ public class PollingHandler extends AbstractVerticle
                     if (writeResult.succeeded())
                     {
                         // JSON file created and initialized with an empty JsonArray
-                        System.out.println("JSON file created and initialized: " + filePath);
-
                         // Now you can insert JsonObjects at runtime
                         insertJsonObject(filePath, vertx, inputData);
                     }
@@ -209,14 +205,12 @@ public class PollingHandler extends AbstractVerticle
 
     private static void insertJsonObject(String filePath, Vertx vertx, JsonObject inputData)
     {
-        // JSON object to insert
-        JsonObject jsonObject = new JsonObject().put("name", "John").put("age", 30);
 
         vertx.fileSystem().readFile(filePath, result -> {
             if (result.succeeded())
             {
 
-                System.out.println("Result : " + result.result());
+                //                System.out.println("Result : " + result.result());
                 // Read the contents of the JSON file
                 JsonArray fileData = result.result().toJsonArray();
 
@@ -228,7 +222,7 @@ public class PollingHandler extends AbstractVerticle
                 vertx.fileSystem().writeFile(filePath, Buffer.buffer(fileData.encodePrettily()), writeResult -> {
                     if (writeResult.succeeded())
                     {
-                        System.out.println("JsonObject inserted successfully");
+                        System.out.println("Data inserted successfully");
                     }
                     else
                     {

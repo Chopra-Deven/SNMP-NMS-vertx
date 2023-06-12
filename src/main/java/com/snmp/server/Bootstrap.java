@@ -2,7 +2,7 @@ package com.snmp.server;
 
 
 import com.snmp.server.api.MainRouter;
-import com.snmp.server.api.PollingHandler;
+import com.snmp.server.polling.PollingHandler;
 import com.snmp.server.database.DatabaseHandler;
 import io.vertx.core.Vertx;
 
@@ -12,32 +12,23 @@ public class Bootstrap
 
     public static void main(String[] args)
     {
+
         Vertx vertx = Vertx.vertx();
 
-        vertx.deployVerticle(new MainRouter()).onComplete(handler -> {
+        vertx.deployVerticle(MainRouter.class.getName())
+            .compose(deployDatabase -> vertx.deployVerticle(DatabaseHandler.class.getName()))
+            .compose(deployPoller -> vertx.deployVerticle(PollingHandler.class.getName()))
+            .onComplete(result -> {
 
-            if (handler.succeeded()){
-                System.out.println("Main vertical deployed");
-            }
-            else
-                System.out.println(handler.cause().getMessage());
-        });
-        vertx.deployVerticle(new DatabaseHandler()).onComplete(handler -> {
+            if (result.succeeded())
 
-            if (handler.succeeded()){
-                System.out.println("Database handler deployed");
-            }
-            else
-                System.out.println(handler.cause().getMessage());
-        });
-        vertx.deployVerticle(new PollingHandler()).onComplete(handler -> {
+                System.out.println("All verticals are deployed");
 
-            if (handler.succeeded()){
-                System.out.println("Polling handler deployed");
-            }
             else
-                System.out.println(handler.cause().getMessage());
+                System.out.println("Failed to deploy : " + result.cause().getMessage());
+
         });
+
     }
 
 }

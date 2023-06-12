@@ -29,11 +29,11 @@ public class DatabaseHandler extends AbstractVerticle
 
         EventBus eventbus = vertx.eventBus();
 
-        eventbus.localConsumer(Constants.CREDENTIAL_ADDRESS, data -> {
+        eventbus.<JsonObject>localConsumer(Constants.CREDENTIAL_ADDRESS, data -> {
 
             try
             {
-                JsonObject inputData = (JsonObject) data.body();
+                JsonObject inputData = data.body();
 
                 switch (inputData.getString(Constants.REQUEST_TYPE))
                 {
@@ -42,15 +42,12 @@ public class DatabaseHandler extends AbstractVerticle
 
                         vertx.executeBlocking(insertPromise -> {
 
-                            //                            System.out.println("Message : " + inputData.toString());
-
                             inputData.put(CREDENTIAL_ID_KEY, CREDENTIAL_ID).remove(REQUEST_TYPE);
 
                             JsonObject json = credentialDB.add(CREDENTIAL_ID, inputData);
 
                             if (json == null)
                             {
-                                CREDENTIAL_ID++;
                                 insertPromise.complete();
                             }
                             else
@@ -61,12 +58,11 @@ public class DatabaseHandler extends AbstractVerticle
 
                             if (handler.succeeded())
                             {
-                                data.reply(Util.setSuccessResponse("Credential Profile Created successfully"));
+                                data.reply(Util.setSuccessResponse("Credential Profile Created successfully").put(CREDENTIAL_ID_KEY, CREDENTIAL_ID++));
                             }
-
                             else
                             {
-                                data.reply(Util.getFailureResponse(handler.cause().getMessage()));
+                                data.reply(Util.setFailureResponse(handler.cause().getMessage()));
                             }
                         });
 
@@ -118,7 +114,7 @@ public class DatabaseHandler extends AbstractVerticle
                         }, false, result -> {
 
                             if (result.succeeded())
-                                data.reply(Util.setSuccessResponse("Data Retrieved").put("data",result.result()));
+                                data.reply(Util.setSuccessResponse("Data Retrieved").put("data", result.result()));
 
                             else
                                 data.reply(Util.setFailureResponse(result.cause().getMessage()));
@@ -134,7 +130,7 @@ public class DatabaseHandler extends AbstractVerticle
 
                             inputData.remove(REQUEST_TYPE);
 
-                            if (credentialDB.isKeyExist(credentialId))
+                            if (credentialDB.containsKey(credentialId))
                             {
 
                                 JsonObject oldCredentialProfile = credentialDB.get(credentialId);
@@ -187,7 +183,7 @@ public class DatabaseHandler extends AbstractVerticle
 
                             List<JsonObject> provisionProfiles = provisionDB.getAll();
 
-                            if (!findKey(discoveryProfiles, CREDENTIAL_ID_KEY, credentialId) && !findKey(provisionProfiles, CREDENTIAL_ID_KEY, credentialId))
+                            if (!Util.findKey(discoveryProfiles, CREDENTIAL_ID_KEY, credentialId) && !Util.findKey(provisionProfiles, CREDENTIAL_ID_KEY, credentialId))
                             {
 
                                 if (credentialDB.delete(credentialId) != null)
@@ -218,7 +214,7 @@ public class DatabaseHandler extends AbstractVerticle
             }
             catch (Exception exception)
             {
-                System.out.println("Deven::: " + exception);
+                System.out.println("Internal Server error : " + exception.getMessage());
             }
 
         });
@@ -234,16 +230,15 @@ public class DatabaseHandler extends AbstractVerticle
 
                     vertx.executeBlocking(insertPromise -> {
 
-                        if (credentialDB.isKeyExist(inputData.getInteger(CREDENTIAL_ID_KEY)))
+                        if (credentialDB.containsKey(inputData.getInteger(CREDENTIAL_ID_KEY)))
                         {
-                            inputData.put(DISCOVERY_ID_KEY, DISCOVERY_ID).put("isDiscovered", "false").remove(REQUEST_TYPE);
+                            inputData.put(DISCOVERY_ID_KEY, DISCOVERY_ID).put(IS_DISCOVERED, FALSE).remove(REQUEST_TYPE);
 
                             JsonObject json = discoveryDB.add(DISCOVERY_ID, inputData);
 
                             if (json == null)
                             {
-                                DISCOVERY_ID++;
-                                insertPromise.complete("Discovery Profile created successfully");
+                                insertPromise.complete();
                             }
                             else
                             {
@@ -259,12 +254,12 @@ public class DatabaseHandler extends AbstractVerticle
 
                         if (handler.succeeded())
                         {
-                            data.reply(Util.getSuccessResponse(handler.result().toString()));
+                            data.reply(Util.setSuccessResponse("Discovery Profile created successfully").put(DISCOVERY_ID_KEY, DISCOVERY_ID++));
                         }
 
                         else
                         {
-                            data.reply(Util.getFailureResponse(handler.cause().getMessage()));
+                            data.reply(Util.setFailureResponse(handler.cause().getMessage()));
                         }
                     });
 
@@ -276,7 +271,7 @@ public class DatabaseHandler extends AbstractVerticle
 
                         JsonArray credentials = new JsonArray(discoveryDB.getAll());
 
-                        promise.complete(Util.getSuccessResponse("Data Retrieved").put("data", credentials));
+                        promise.complete(Util.setSuccessResponse("Data Retrieved").put("data", credentials));
 
                     }, false, result -> {
 
@@ -287,7 +282,7 @@ public class DatabaseHandler extends AbstractVerticle
 
                         else
                         {
-                            data.reply(Util.getFailureResponse(result.cause().getMessage()));
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
                         }
 
                     });
@@ -305,7 +300,7 @@ public class DatabaseHandler extends AbstractVerticle
                         if (discoveryProfile != null)
                         {
 
-                            JsonObject credentialProfile = credentialDB.get(discoveryProfile.getInteger("credentialId"));
+                            JsonObject credentialProfile = credentialDB.get(discoveryProfile.getInteger(CREDENTIAL_ID_KEY));
 
                             if (credentialProfile != null)
                             {
@@ -332,7 +327,7 @@ public class DatabaseHandler extends AbstractVerticle
                         }
                         else
                         {
-                            data.reply(Util.getFailureResponse(result.cause().getMessage()));
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
                         }
 
 
@@ -360,7 +355,7 @@ public class DatabaseHandler extends AbstractVerticle
                     }, false, result -> {
 
                         if (result.succeeded())
-                            data.reply(Util.setSuccessResponse("Data Retrieved").put("data",result.result()));
+                            data.reply(Util.setSuccessResponse("Data Retrieved").put("data", result.result()));
 
                         else
                             data.reply(Util.setFailureResponse(result.cause().getMessage()));
@@ -380,15 +375,14 @@ public class DatabaseHandler extends AbstractVerticle
 
                         if (oldDiscoveryProfile != null)
                         {
-                            if (credentialDB.isKeyExist(inputData.getInteger(CREDENTIAL_ID_KEY)))
+                            if (credentialDB.containsKey(inputData.getInteger(CREDENTIAL_ID_KEY)))
                             {
                                 if (oldDiscoveryProfile.getString(DISCOVERY_NAME).equals(inputData.getString(DISCOVERY_NAME)))
                                 {
-                                    oldDiscoveryProfile.put(IP, inputData.getString(IP)).put(PORT, inputData.getString(PORT)).put(CREDENTIAL_ID_KEY, inputData.getInteger(CREDENTIAL_ID_KEY)).put(IS_DISCOVERED, "false");
+                                    oldDiscoveryProfile.put(IP, inputData.getString(IP)).put(PORT, inputData.getInteger(PORT)).put(CREDENTIAL_ID_KEY, inputData.getInteger(CREDENTIAL_ID_KEY)).put(IS_DISCOVERED, FALSE);
 
                                     if (discoveryDB.update(discoveryId, oldDiscoveryProfile) != null)
                                     {
-                                        System.out.println("\nready for update");
                                         promise.complete(Util.setSuccessResponse("discovery Profile updated successfully"));
                                     }
                                     else
@@ -400,7 +394,9 @@ public class DatabaseHandler extends AbstractVerticle
                                 {
                                     promise.fail("You can't change the discovery Name");
                                 }
-                            }else {
+                            }
+                            else
+                            {
                                 promise.fail("Credential Id doesn't exist");
                             }
                         }
@@ -461,7 +457,8 @@ public class DatabaseHandler extends AbstractVerticle
 
                     getVertx().executeBlocking(promise -> {
 
-                        if (discoveryDB.delete(discoveryId) != null){
+                        if (discoveryDB.delete(discoveryId) != null)
+                        {
                             promise.complete(Util.setSuccessResponse("Discovery profile deleted successfully"));
                         }
                         else
@@ -495,50 +492,65 @@ public class DatabaseHandler extends AbstractVerticle
 
                     vertx.executeBlocking(promise -> {
 
-                        System.out.println("\nId for provision : " + inputData.getInteger(DISCOVERY_ID_KEY));
+                        int id = inputData.getInteger(DISCOVERY_ID_KEY);
 
-                        JsonObject discoveryProfile = discoveryDB.get(inputData.getInteger(DISCOVERY_ID_KEY));
+                        //                        System.out.println("\nId for provision : " + inputData.getInteger(DISCOVERY_ID_KEY));
+
+                        JsonObject discoveryProfile = discoveryDB.get(id);
+
+                        List<JsonObject> provisionProfiles = provisionDB.getAll();
+
+                        //TODO don't allow to run provision again
 
                         if (discoveryProfile != null)
                         {
-                            if (discoveryProfile.getString("isDiscovered") != null && discoveryProfile.getString("isDiscovered").equals("true"))
+                            if (!Util.findKey(provisionProfiles, DISCOVERY_ID_KEY, id) && !provisionDB.containsKeyValue(IP, discoveryProfile.getString(IP)))
                             {
 
-
-                                String[] keysToRemove = {"credentialName", "community", "version"};
-
-                                // Remove key-value pairs
-                                for (String key : keysToRemove)
+                                if (discoveryProfile.getString(IS_DISCOVERED) != null && discoveryProfile.getString(IS_DISCOVERED).equals(TRUE))
                                 {
-                                    discoveryProfile.remove(key);
-                                }
 
-                                if (provisionDB.add(PROVISION_ID++, discoveryProfile) == null)
-                                {
-                                    promise.complete("Provision Success");
+                                    String[] keysToRemove = {"credentialName", "community", "version"};
+
+                                    // Remove key-value pairs
+                                    for (String key : keysToRemove)
+                                    {
+                                        discoveryProfile.remove(key);
+                                    }
+
+                                    if (provisionDB.add(PROVISION_ID, discoveryProfile.put(PROVISION_ID_KEY, PROVISION_ID)) == null)
+                                    {
+                                        promise.complete("Provision Success");
+                                    }
+                                    else
+                                    {
+                                        promise.fail("Provision Failed");
+                                    }
+
                                 }
                                 else
-                                {
-                                    promise.fail("Provision Failed");
-                                }
-
+                                    promise.fail("Devise is not Discovered");
                             }
                             else
-                                promise.fail("Devise is not Discovered");
+                            {
+                                promise.fail("Device is already provisioned");
+                            }
                         }
                         else
                         {
                             promise.fail("Discovery Id doesn't exist");
                         }
+
+
                     }, false, result -> {
 
                         if (result.succeeded())
                         {
-                            data.reply(Util.getSuccessResponse(result.result().toString()));
+                            data.reply(Util.setSuccessResponse(result.result().toString()).put(PROVISION_ID_KEY, PROVISION_ID++));
                         }
                         else
                         {
-                            data.reply(Util.getFailureResponse(result.cause().getMessage()));
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
                         }
 
 
@@ -562,9 +574,7 @@ public class DatabaseHandler extends AbstractVerticle
                             provisionData.put("credentialName", credentialData.getString("credentialName")).put("community", credentialData.getString("community")).put("version", credentialData.getString("version"));
                         }
 
-                        //                        System.out.println("\nProvision Data : " + provisionProfile);
-
-                        promise.complete(Util.getSuccessResponse("Data Retrieved").put("data", provisionProfile));
+                        promise.complete(Util.setSuccessResponse("Data Retrieved").put("data", provisionProfile));
 
                     }, false, result -> {
 
@@ -575,10 +585,11 @@ public class DatabaseHandler extends AbstractVerticle
 
                         else
                         {
-                            data.reply(Util.getFailureResponse(result.cause().getMessage()));
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
                         }
 
                     });
+                    break;
 
                 case PROVISION_DELETE:
 
@@ -586,7 +597,8 @@ public class DatabaseHandler extends AbstractVerticle
 
                     getVertx().executeBlocking(promise -> {
 
-                        if (provisionDB.delete(provisionId) != null){
+                        if (provisionDB.delete(provisionId) != null)
+                        {
                             promise.complete(Util.setSuccessResponse("Provision profile deleted successfully"));
                         }
                         else
@@ -603,6 +615,35 @@ public class DatabaseHandler extends AbstractVerticle
 
                     });
 
+                    break;
+
+                case PROVISION_GET:
+
+                    provisionId = inputData.getInteger(PROVISION_ID_KEY);
+
+                    getVertx().executeBlocking(promise -> {
+
+                        JsonObject provisionProfile = provisionDB.get(provisionId);
+
+                        if (provisionProfile != null)
+                        {
+                            promise.complete(Util.setSuccessResponse("Data retrieved").put("data", provisionProfile));
+                        }
+                        else
+                            promise.fail("Provision Id doesn't exist");
+
+                    }, false, result -> {
+
+                        if (result.succeeded())
+                        {
+                            data.reply(result.result());
+                        }
+                        else
+                            data.reply(Util.setFailureResponse(result.cause().getMessage()));
+
+                    });
+
+                    break;
             }
 
         });
@@ -610,17 +651,5 @@ public class DatabaseHandler extends AbstractVerticle
         startPromise.complete();
     }
 
-    private static boolean findKey(List<JsonObject> list, String key, int value)
-    {
-
-        for (JsonObject profile : list)
-        {
-            if (profile.getInteger(key) == value)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
 }

@@ -1,5 +1,6 @@
 package com.snmp.server.database;
 
+import com.snmp.server.util.Constants;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
@@ -27,7 +28,11 @@ public class DiscoveryDB implements DatabaseServices<JsonObject>
     @Override
     public JsonObject get(int id)
     {
-        return discoveryProfiles.get(id).copy();
+
+        if (discoveryProfiles.get(id) != null)
+            return discoveryProfiles.get(id).copy();
+
+        return null;
     }
 
     @Override
@@ -41,15 +46,15 @@ public class DiscoveryDB implements DatabaseServices<JsonObject>
     public JsonObject update(int id, JsonObject obj)
     {
 
-        System.out.println("Discovery Updated");
-        return discoveryProfiles.put(id,  obj);
+        return discoveryProfiles.put(id, obj);
     }
 
     @Override
     public JsonObject add(int id, JsonObject obj)
     {
 
-        if (isValueExist(obj.getString("discoveryName"))){
+        if (containsKeyValue(Constants.DISCOVERY_NAME,obj.getString("discoveryName")))
+        {
             return obj;
         }
 
@@ -60,17 +65,27 @@ public class DiscoveryDB implements DatabaseServices<JsonObject>
     @Override
     public JsonObject delete(int id)
     {
+
         return discoveryProfiles.remove(id);
     }
 
-    public boolean isKeyExist(int id){
+    public boolean containsKey(int id)
+    {
 
         return discoveryProfiles.containsKey(id);
     }
 
-    public boolean isValueExist(String name){
+    @Override
+    public boolean containsKeyValue(String key, String value)
+    {
+
+        return discoveryProfiles.values().stream().anyMatch(profile -> profile.getString(key).equalsIgnoreCase(value));
+    }
+
+   /* public boolean isValueExist(String name)
+    {
 
         return discoveryProfiles.values().stream().anyMatch(value -> value.getString("discoveryName").equalsIgnoreCase(name));
-    }
+    }*/
 
 }
